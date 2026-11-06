@@ -1,0 +1,459 @@
+// This is your Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// IDENTITY AND AUDIT
+// ============================================
+
+model AdminUser {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  status       String    @default("active") // active, inactive, suspended
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  roles               Role[]               @relation("UserRoles")
+  sessions            Session[]
+  auditLogs           AuditLog[]           @relation("AuditActor")
+  passwordResetTokens PasswordResetToken[]
+
+  @@map("admin_users")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  name        String
+  description String?
+  protected   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       AdminUser[]  @relation("UserRoles")
+  permissions Permission[] @relation("RolePermissions")
+
+  @@map("roles")
+}
+
+model Permission {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  resource  String
+  action    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  roles Role[] @relation("RolePermissions")
+
+  @@map("permissions")
+}
+
+model Session {
+  id         String    @id @default(uuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  deviceInfo String?
+  ipAddress  String?
+  createdAt  DateTime  @default(now())
+
+  user AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String?
+  requestId  String?
+  beforeJson Json?
+  afterJson  Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  actor AdminUser? @relation("AuditActor", fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================
+// BOOKS AND FORMATS
+// ============================================
+
+model Book {
+  id               String    @id @default(uuid())
+  slug             String    @unique
+  title            String
+  subtitle         String?
+  shortDescription String?
+  description      String?
+  publicationDate  DateTime?
+  editionLabel     String?
+  publisherName    String?
+  language         String    @default("en")
+  pageCount        Int?
+  tableOfContents  String?
+  coverMediaId     String?
+  status           String    @default("draft") // draft, published, archived
+  publishedAt      DateTime?
+  seoTitle         String?
+  seoDescription   String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  createdBy        String?
+  updatedBy        String?
+
+  coverMedia MediaAsset? @relation(fields: [coverMediaId], references: [id])
+
+  authors              BookAuthor[]
+  categories           BookCategory[]
+  keywords             BookKeyword[]
+  formats              BookFormat[]
+  relatedFrom          BookRelated[]         @relation("BookRelatedFrom")
+  relatedTo            BookRelated[]         @relation("BookRelatedTo")
+  searchDocument       BookSearchDocument?
+  homepageSectionBooks HomepageSectionBook[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([publishedAt])
+  @@map("books")
+}
+
+model BookFormat {
+  id         String   @id @default(uuid())
+  bookId     String
+  format     String // paperback, hardcover
+  priceMinor BigInt
+  currency   String   @default("INR")
+  isbn       String?  @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([bookId, format])
+  @@index([bookId])
+  @@map("book_formats")
+}
+
+model BookAuthor {
+  id           String   @id @default(uuid())
+  bookId       String
+  authorId     String
+  displayOrder Int      @default(0)
+  creditRole   String? // author, editor, translator
+  createdAt    DateTime @default(now())
+
+  book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  author Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([bookId, authorId])
+  @@map("book_authors")
+}
+
+model BookCategory {
+  id         String   @id @default(uuid())
+  bookId     String
+  categoryId String
+  isPrimary  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  book     Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([bookId, categoryId])
+  @@map("book_categories")
+}
+
+model BookKeyword {
+  id        String   @id @default(uuid())
+  bookId    String
+  keywordId String
+  createdAt DateTime @default(now())
+
+  book    Book    @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  keyword Keyword @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+
+  @@unique([bookId, keywordId])
+  @@map("book_keywords")
+}
+
+model BookRelated {
+  bookFromId   String
+  bookToId     String
+  relationType String // manual
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  bookFrom Book @relation("BookRelatedFrom", fields: [bookFromId], references: [id], onDelete: Cascade)
+  bookTo   Book @relation("BookRelatedTo", fields: [bookToId], references: [id], onDelete: Cascade)
+
+  @@id([bookFromId, bookToId])
+  @@map("book_related")
+}
+
+// ============================================
+// AUTHORS (SIMPLIFIED - NAMES ONLY)
+// ============================================
+
+model Author {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  sortName  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  books BookAuthor[]
+
+  @@index([slug])
+  @@index([name])
+  @@map("authors")
+}
+
+// ============================================
+// CATEGORIES
+// ============================================
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  parentId    String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parent           Category?                 @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children         Category[]                @relation("CategoryHierarchy")
+  books            BookCategory[]
+  homepageSections HomepageCategorySection[]
+
+  @@index([slug])
+  @@index([isActive])
+  @@map("categories")
+}
+
+// ============================================
+// KEYWORDS
+// ============================================
+
+model Keyword {
+  id        String   @id @default(uuid())
+  label     String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  books BookKeyword[]
+
+  @@index([slug])
+  @@map("keywords")
+}
+
+// ============================================
+// MEDIA ASSETS
+// ============================================
+
+model MediaAsset {
+  id               String   @id @default(uuid())
+  kind             String // book_cover, banner, brand_image
+  storagePath      String   @unique
+  originalFilename String
+  mimeType         String
+  sizeBytes        BigInt
+  width            Int?
+  height           Int?
+  checksum         String?
+  altText          String?
+  caption          String?
+  credit           String?
+  uploadedBy       String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  books          Book[]
+  desktopBanners Banner[] @relation("BannerDesktopImage")
+  mobileBanners  Banner[] @relation("BannerMobileImage")
+
+  @@index([storagePath])
+  @@index([kind])
+  @@map("media_assets")
+}
+
+// ============================================
+// HOMEPAGE CONFIGURATION
+// ============================================
+
+model Banner {
+  id                 String      @id @default(uuid())
+  imageMediaId       String
+  mobileImageMediaId String?
+  headline           String?
+  caption            String?
+  targetType         String // book, category, url
+  targetIdOrUrl      String
+  isEnabled          Boolean     @default(false)
+  sortOrder          Int         @default(0)
+  startsAt           DateTime?
+  endsAt             DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  imageMedia         MediaAsset  @relation("BannerDesktopImage", fields: [imageMediaId], references: [id])
+  mobileImageMedia   MediaAsset? @relation("BannerMobileImage", fields: [mobileImageMediaId], references: [id], onDelete: SetNull)
+
+  @@index([isEnabled])
+  @@index([sortOrder])
+  @@map("banners")
+}
+
+model HomepageCategorySection {
+  id            String   @id @default(uuid())
+  categoryId    String
+  titleOverride String?
+  isEnabled     Boolean  @default(false)
+  sortOrder     Int      @default(0)
+  maxBooks      Int      @default(10)
+  sortMode      String   @default("newest") // newest, title_asc, title_desc, manual
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  category     Category              @relation(fields: [categoryId], references: [id])
+  sectionBooks HomepageSectionBook[]
+
+  @@index([isEnabled])
+  @@index([sortOrder])
+  @@map("homepage_category_sections")
+}
+
+model HomepageSectionBook {
+  id        String   @id @default(uuid())
+  sectionId String
+  bookId    String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  section HomepageCategorySection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  book    Book                    @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, bookId])
+  @@map("homepage_section_books")
+}
+
+// ============================================
+// SEARCH
+// ============================================
+
+model SearchSynonym {
+  id              String   @id @default(uuid())
+  canonicalTerm   String
+  alternativeTerm String
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([canonicalTerm, alternativeTerm])
+  @@index([isActive])
+  @@map("search_synonyms")
+}
+
+model BookSearchDocument {
+  id         String   @id @default(uuid())
+  bookId     String   @unique
+  searchText String   @default("")
+  updatedAt  DateTime @default(now())
+  book       Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([bookId])
+  @@map("book_search_documents")
+}
+
+// ============================================
+// BASIC CMS
+// ============================================
+
+model SiteSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  valueJson Json
+  scope     String   @default("global")
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+model NavigationMenu {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  label     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items NavigationItem[]
+
+  @@map("navigation_menus")
+}
+
+model NavigationItem {
+  id         String   @id @default(uuid())
+  menuId     String
+  parentId   String?
+  label      String
+  targetType String // internal, external
+  targetUrl  String
+  sortOrder  Int      @default(0)
+  visible    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  menu     NavigationMenu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  parent   NavigationItem?  @relation("NavigationHierarchy", fields: [parentId], references: [id])
+  children NavigationItem[] @relation("NavigationHierarchy")
+
+  @@map("navigation_items")
+}
+
+model SlugRedirect {
+  id        String   @id @default(uuid())
+  oldSlug   String   @unique
+  newSlug   String
+  createdAt DateTime @default(now())
+
+  @@index([oldSlug])
+  @@map("slug_redirects")
+}

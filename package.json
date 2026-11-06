@@ -1,0 +1,43 @@
+{
+  "name": "howacademics",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "description": "Informational academic book catalogue with admin management",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\" \"npm run dev:admin\"",
+    "dev:api": "cd apps/api && npm run dev",
+    "dev:web": "cd apps/web && npm run dev",
+    "dev:admin": "cd apps/admin && npm run dev",
+    "build": "npm run build:api && npm run build:web && npm run build:admin",
+    "build:api": "npm run build -w @howacademics/api",
+    "build:web": "npm run build -w @howacademics/web",
+    "build:admin": "npm run build -w @howacademics/admin",
+    "typecheck": "npm run typecheck -w @howacademics/api && npm run typecheck -w @howacademics/web && npm run typecheck -w @howacademics/admin",
+    "test": "npm run typecheck && node --import tsx --test tests/*.test.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:studio": "prisma studio",
+    "bootstrap:admin": "npm run bootstrap -w @howacademics/api",
+    "seed:demo": "npm run seed:demo -w @howacademics/api"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "concurrently": "^9.1.2",
+    "prettier": "^3.4.2",
+    "prisma": "^6.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "dependencies": {
+    "sharp": "^0.35.5"
+  }
+}

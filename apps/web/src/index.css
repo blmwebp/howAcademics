@@ -1,0 +1,192 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-page: #221e20;
+  --color-header: #1c191a;
+  --color-ink-inverse: #cdc5bd;
+  --color-paper: #efeeec;
+  --color-ink: #242022;
+  --color-panel-dark: #100f10;
+  --color-border-dark: #393337;
+  --color-accent: #c9b9aa;
+  --content-max: 1440px;
+  --side-gutter: clamp(20px, 5.8vw, 90px);
+}
+
+/* Demo covers are original, CSS-drawn book jackets—not copyrighted book artwork. */
+.book-card-cover { aspect-ratio: 2 / 3; width: 100%; background: #161417; box-shadow: 10px 16px 35px rgba(0,0,0,.22); overflow: hidden; }
+.demo-cover { height: 100%; width: 100%; padding: clamp(13px, 1.8vw, 26px); display: flex; flex-direction: column; position: relative; color: #fff; overflow: hidden; border-left: 8px solid rgba(255,255,255,.08); }
+.demo-cover::before { content: ''; position: absolute; width: 155%; height: 42%; border-radius: 50%; border: 12px solid rgba(255,255,255,.10); top: 25%; left: -20%; transform: rotate(-26deg); }
+.demo-cover-imprint { font: 700 9px 'Manrope', sans-serif; letter-spacing: .23em; opacity: .85; position: relative; }
+.demo-cover-symbol { margin: auto 0 3%; font-size: clamp(34px, 5vw, 80px); line-height: 1; opacity: .65; position: relative; }
+.demo-cover strong { font-size: clamp(15px, 1.6vw, 30px); line-height: 1.04; font-weight: 800; max-width: 95%; position: relative; }
+.demo-cover-author { margin-top: 13px; font-size: clamp(8px, .8vw, 12px); font-weight: 600; opacity: .75; position: relative; }
+.book-card-cover .demo-cover { transition: transform .35s ease; }
+a:hover .book-card-cover .demo-cover { transform: scale(1.025); }
+.shelf-scroll { scrollbar-width: thin; scrollbar-color: #6e5e5c transparent; }
+.shelf-arrow { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid #6c6263; border-radius: 50%; transition: background .2s; color: #eae3de; }
+.shelf-arrow:hover { background: #403739; }
+.catalogue-select { background: #201b1d; color: #f4eeeb; border: 1px solid #5a5153; padding: 10px 17px; border-radius: 9999px; min-height: 44px; }
+.banner-book { perspective: 1500px; background: #221e20; min-height: clamp(420px, 56vw, 650px); }
+.banner-scene { min-height: clamp(420px, 56vw, 650px); background-size: cover; display: flex; position: relative; align-items: center; isolation: isolate; overflow: hidden; }
+.banner-scene-0 { background: radial-gradient(circle at 75% 50%, #68483d 0%, #292126 42%, #171519 100%); }
+.banner-scene-1 { background: radial-gradient(circle at 83% 30%, #536677 0%, #272938 45%, #1b1c23 100%); }
+.banner-scene-2 { background: radial-gradient(circle at 72% 65%, #536754 0%, #292b29 45%, #171b1b 100%); }
+.banner-copy { padding: 55px var(--side-gutter) 90px; position: relative; z-index: 5; }
+.banner-art { position: absolute; pointer-events: none; right: 10%; top: 12%; height: 85%; width: 34%; transform: rotate(-17deg); opacity: .38; }
+.banner-art span { display: block; position: absolute; color: #f4e6d8; font-family: Georgia,serif; font-size: clamp(180px,30vw,450px); font-weight: 700; text-shadow: 22px 24px 0 rgba(255,255,255,.12); }
+.banner-art span:last-child { right: -25%; top: 20%; opacity: .34; }
+.banner-turning-page { position: absolute; inset: 0; z-index: 10; transform-style: preserve-3d; transform-origin: left center; backface-visibility: hidden; animation: turn-book-page 880ms cubic-bezier(.4,0,.2,1) forwards; box-shadow: 15px 0 38px rgba(0,0,0,.45); }
+.banner-turning-page .banner-scene { height: 100%; backface-visibility: hidden; }
+.banner-turning-page::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg,transparent 45%,rgba(0,0,0,.25)); pointer-events: none; }
+@keyframes turn-book-page { 0% { transform: rotateY(0); } 40% { transform: rotateY(-70deg); } 100% { transform: rotateY(-180deg); } }
+@media(max-width: 767px) {
+  .banner-art { right: -5%; width: 45%; opacity: .18; }
+  .banner-copy { padding-top: 80px; }
+}
+@media(prefers-reduced-motion: reduce) {
+  .banner-turning-page { animation: none; }
+  .book-card-cover .demo-cover, .shelf-scroll { scroll-behavior: auto; transition: none; }
+}
+
+@layer base {
+  * {
+    @apply border-border-dark;
+  }
+
+  body {
+    @apply bg-page text-ink-inverse antialiased;
+    font-family: 'Manrope', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold;
+  }
+
+  a {
+    @apply text-ink-inverse hover:text-accent transition-colors;
+  }
+}
+
+@layer utilities {
+  .text-hero {
+    font-size: clamp(2.5rem, 5.8vw, 5rem);
+    line-height: 1.1;
+  }
+
+  .container-content {
+    max-width: var(--content-max);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--side-gutter);
+    padding-right: var(--side-gutter);
+  }
+
+  .text-editorial {
+    font-family: Georgia, serif;
+  }
+}
+
+/* =========================================
+   HOWACADEMICS BANNER CAROUSEL
+========================================= */
+
+/* BASE SLIDE */
+
+.banner-slide {
+  opacity: 0;
+  visibility: hidden;
+
+  transition:
+    opacity 850ms ease-in-out,
+    visibility 850ms ease-in-out;
+
+  will-change: opacity;
+}
+
+/* ACTIVE SLIDE */
+
+.banner-slide-active {
+  opacity: 1;
+  visibility: visible;
+  z-index: 2;
+
+  pointer-events: auto;
+}
+
+/* INACTIVE SLIDE */
+
+.banner-slide-inactive {
+  opacity: 0;
+  visibility: hidden;
+  z-index: 1;
+
+  pointer-events: none;
+}
+
+/* =========================================
+   BACKGROUND IMAGE ANIMATION
+========================================= */
+
+.banner-background {
+  transform: scale(1.06);
+
+  transition:
+    transform 5.5s cubic-bezier(
+      0.2,
+      0.65,
+      0.3,
+      1
+    );
+
+  will-change: transform;
+}
+
+/* ACTIVE IMAGE */
+
+.banner-background-active {
+  transform: scale(1);
+}
+
+/* =========================================
+   TEXT ANIMATION
+========================================= */
+
+.banner-content {
+  opacity: 0;
+  transform: translateY(24px);
+
+  transition:
+    opacity 750ms ease,
+    transform 750ms cubic-bezier(
+      0.22,
+      1,
+      0.36,
+      1
+    );
+}
+
+/* ACTIVE TEXT */
+
+.banner-content-active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* =========================================
+   REDUCED MOTION
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .banner-slide,
+  .banner-background,
+  .banner-content {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}

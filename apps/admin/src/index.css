@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: #ffffff;
+  --color-sidebar: #1e293b;
+  --color-border: #e2e8f0;
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+}
+
+@layer components {
+  .admin-input {
+    @apply w-full block border border-border rounded-lg px-3 py-2.5 bg-white text-text outline-none focus:ring-2 focus:ring-blue-500;
+  }
+  .admin-panel {
+    @apply bg-white rounded-xl border border-border p-5 md:p-7;
+  }
+  .admin-button {
+    @apply inline-flex items-center justify-center rounded-lg bg-blue-700 px-5 py-2.5 text-white font-semibold hover:bg-blue-800 disabled:opacity-50;
+  }
+  .admin-button-secondary {
+    @apply inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-700 hover:bg-slate-100;
+  }
+  .admin-error {
+    @apply p-3 my-4 border border-red-300 bg-red-50 text-red-800 rounded-lg;
+  }
+  .admin-success {
+    @apply p-3 my-4 border border-green-300 bg-green-50 text-green-800 rounded-lg;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-bg text-text antialiased;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Hide scrollbar while keeping scrolling enabled */
+.scrollbar-hide {
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* Older Edge / IE */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;               /* Chrome, Safari */
+}
