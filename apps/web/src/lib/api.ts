@@ -1,5 +1,11 @@
+const API_URL = (
+  import.meta.env.VITE_API_URL || 'http://localhost:3000'
+).replace(/\/+$/, '');
+
+export const API_BASE = `${API_URL}/api/v1`;
+
 export async function apiGet<T>(url: string): Promise<T> {
-  const response = await fetch('/api/v1/public' + url);
+  const response = await fetch(`${API_BASE}/public` + url);
   if (!response.ok) throw new Error('The catalogue is currently unavailable.');
   const payload = await response.json() as { data: T };
   return payload.data;
