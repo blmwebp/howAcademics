@@ -5,7 +5,7 @@
   "type": "commonjs",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "prisma generate --schema ../../prisma/schema.prisma && tsc",
     "start": "node dist/index.js",
     "bootstrap": "tsx src/bootstrap.ts",
     "seed:demo": "tsx src/seedDemo.ts",
